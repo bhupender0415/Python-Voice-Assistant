@@ -1,3 +1,4 @@
+import wmi
 import os
 import requests
 from time import strftime
@@ -21,6 +22,8 @@ import googletrans  # Code Added By Vishnuppriyan
 from bs4 import BeautifulSoup
 import openai
 import time
+import MyAlarm
+from pywikihow import search_wikihow
 # from PyDictionary import PyDictionary
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
@@ -37,6 +40,12 @@ def speak(audio):  # speak audio
     print(audio)
     engine.say(audio)
     engine.runAndWait()
+
+
+def bytes_to_mb(bytes):
+    KB = 1024  # One Kilobyte is 1024 bytes
+    MB = KB * 1024  # One MB is 1024 KB
+    return int(bytes/MB)
 
 
 def wishMe():  # wishes me
@@ -308,6 +317,17 @@ if __name__ == "__main__":
             else:
                 speak("Can't find details about this city")
 
+        elif "current news" in query or "latest news" in query:
+            url = "https://www.indiatoday.in/india"
+            page = requests.get(url)
+            soup = BeautifulSoup(page.content, 'html.parser')
+
+            # Find all the headlines on the page
+            headlines = soup.find_all("h2")
+            for headline in headlines[:4]:
+                print(headline.text)
+                speak(headline.text)
+
         elif "who made you" in query or "who created you" in query or "who discovered you" in query:
             speak("I was built by a Human")
             print("I was built by a Human")
@@ -390,6 +410,37 @@ if __name__ == "__main__":
             img = pyautogui.screenshot(name_img)
             speak("screenshot is taken, sir")
             img.show()
+
+        elif "system" in query:
+
+            c = wmi.WMI()
+            my_system = c.Win32_ComputerSystem()[0]
+            speak(f"Manufacturer: {my_system.Manufacturer}")
+            speak(f"Model: {my_system. Model}")
+            speak(f"Name: {my_system.Name}")
+            speak(f"NumberOfProcessors: {my_system.NumberOfProcessors}")
+            speak(f"SystemType: {my_system.SystemType}")
+            speak(f"SystemFamily: {my_system.SystemFamily}")
+
+        elif 'how to' in query:
+            try:
+                # query = query.replace('how to', '')
+                max_results = 1
+                data = search_wikihow(query, max_results)
+                # assert len(data) == 1
+                data[0].print()
+                speak(data[0].summary)
+            except Exception as e:
+                speak('Sorry, I am unable to find the answer for your query.')
+
+        elif 'set alarm' in query:
+            speak(
+                "Tell me the time to set an Alarm. For example, set an alarm for 11:21 AM")
+            a_info = takeCommand()
+            a_info = a_info.replace('set an alarm for', '')
+            a_info = a_info.replace('.', '')
+            a_info = a_info.upper()
+            MyAlarm.alarm(a_info)
 
         elif 'meaning' in query:
             speak("Which word do you want me to define Sir?")
